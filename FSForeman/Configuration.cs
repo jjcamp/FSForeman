@@ -141,8 +141,10 @@ namespace FSForeman {
                         var cmd = new SQLiteCommand(sql, conn);
                         var reader = cmd.ExecuteReader();
                         reader.Read();
-                        otherOpts.Port = (int)reader["Port"];
-                        otherOpts.UpdateDelay = (int)reader["UpdateDelay"];
+                        otherOpts = new OtherOpts {
+                            Port = Convert.ToInt32(reader["Port"]),
+                            UpdateDelay = Convert.ToInt32(reader["UpdateDelay"])
+                        };
 
                         trans.Commit();
                     }
