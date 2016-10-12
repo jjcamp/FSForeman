@@ -13,8 +13,8 @@ namespace FSForeman {
         public static Configuration Global;
         
         private string connString;
-        private CachedResults<string> ignores;
-        private CachedResults<string> roots;
+        private CachedResults<string> ignores; // Compiler warns that these are always null, but
+        private CachedResults<string> roots;   // they are assigned in GetSingleColumnCachedResults()
         private OtherOpts otherOpts;
 
         /// <summary>
@@ -70,10 +70,11 @@ namespace FSForeman {
         /// <param name="dbFile">Path of the configuration file.</param>
         /// <param name="setGlobal">If true, sets the <see cref="Global"/> instance.</param>
         public Configuration(string dbFile, bool setGlobal = false) {
-            connString = $"Data Source={dbFile}";
+            var fullDbPath = Path.Combine(Directory.GetCurrentDirectory(), dbFile);
+            connString = $"Data Source={fullDbPath}";
 
             if (!File.Exists(dbFile)) {
-                SQLiteConnection.CreateFile(dbFile);
+                SQLiteConnection.CreateFile(fullDbPath);
                 ResetConfig();
             }
 

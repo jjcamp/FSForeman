@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.IO;
+using System.Threading;
 using System.Diagnostics;
 
 namespace FSForeman {
@@ -10,7 +11,7 @@ namespace FSForeman {
 
         public Service() {
             // Logger
-            Logger.FilePath = "log.txt";
+            Logger.FilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
             Logger.DeleteLogFile();
             Logger.UseTimestamp = true;
             Logger.Output = Logger.OutputType.File;
@@ -26,7 +27,7 @@ namespace FSForeman {
             foreach (var pattern in ignores)
                 Logger.LogLine($"\t{pattern}");
             
-            //FileCache
+            // FileCache
             cache = new FileCache();
             
             // Watcher
