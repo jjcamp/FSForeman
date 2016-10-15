@@ -61,14 +61,14 @@ namespace FSForeman {
         private static void LogFile(string text) {
             if (!File.Exists(FilePath)) {
                 lock (FilePath) {
-                    using (StreamWriter sw = File.CreateText(FilePath)) {
+                    using (var sw = File.CreateText(FilePath)) {
                         sw.Write(text);
                     }
                 }
             }
             else if (FilePath != null) {
                 lock (FilePath) {
-                    using (StreamWriter sw = File.AppendText(FilePath)) {
+                    using (var sw = File.AppendText(FilePath)) {
                         sw.Write(text);
                     }
                 }

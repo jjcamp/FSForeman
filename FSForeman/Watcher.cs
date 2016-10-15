@@ -3,30 +3,32 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace FSForeman {
     public class Watcher {
-        private List<FileSystemWatcher> watchers;
-        private Queue<Action> events;
-        private FileCache cache;
+        private readonly List<FileSystemWatcher> watchers;
+        private readonly Queue<Action> events;
+        private readonly FileCache cache;
         private string[] ignorePatterns;
         private List<Regex> ignores;
-        private volatile bool locked = false;
-        private volatile bool watching = false;
+        private volatile bool locked;
+        private volatile bool watching;
 
         /// <summary>
         /// Creates a new <see cref="Watcher"/> instance.
         /// </summary>
         /// <param name="dirs">An array of directories to watch.</param>
         /// <param name="cache">A reference to the <see cref="FileCache"/></param>
-        public Watcher(string[] dirs, ref FileCache cache) {
+        public Watcher(IEnumerable<string> dirs, ref FileCache cache) {
             this.cache = cache;
             events = new Queue<Action>();
             watchers = new List<FileSystemWatcher>();
             foreach (var d in dirs) {
-                var fsw = new FileSystemWatcher(d);
-                fsw.IncludeSubdirectories = true;
+                var fsw = new FileSystemWatcher(d) {
+                    IncludeSubdirectories = true
+                };
                 watchers.Add(fsw);
                 AddEventHandlers(fsw);
             }
@@ -82,19 +84,16 @@ namespace FSForeman {
         }
 
         private bool TryDequeue() {
-            if (!locked && events.Count > 0) {
-                var e = events.Dequeue();
-                Task.Run(() => e());
-                return true;
-            }
-            return false;
+            if (locked || events.Count <= 0) return false;
+            var e = events.Dequeue();
+            Task.Run(() => e());
+            return true;
         }
 
         private void OnCreated(string path) {
-            if (!IsIgnored(path)) {
-                Logger.LogLine($"New file: {path}");
-                cache.Add(new FileInfo(path));
-            }
+            if (IsIgnored(path)) return;
+            Logger.LogLine($"New file: {path}");
+            cache.Add(new FileInfo(path));
         }
 
         private void OnDeleted(string path) {
@@ -115,29 +114,26 @@ namespace FSForeman {
             }
             else if (ignoreOld)
                 OnCreated(newPath);
-            else if (ignoreNew)
+            else
                 OnDeleted(oldPath);
         }
 
         private void UpdateIgnores() {
             lock (ignores) {
                 var confIgnores = Configuration.Global.Ignores;
-                if (ignorePatterns != confIgnores) {
-                    ignorePatterns = confIgnores;
-                    ignores = new List<Regex>(ignorePatterns.Length);
-                    foreach (var p in ignorePatterns)
-                        ignores.Add(new Regex(p));
-                }
+                if (ignorePatterns == confIgnores) return;
+                ignorePatterns = confIgnores;
+                ignores = new List<Regex>(ignorePatterns.Length);
+                foreach (var p in ignorePatterns)
+                    ignores.Add(new Regex(p));
             }
         }
 
         private bool IsIgnored(string path) {
             UpdateIgnores();
             lock (ignores) {
-                foreach (var r in ignores) {
-                    if (r.IsMatch(path))
-                        return true;
-                }
+                if (ignores.Any(r => r.IsMatch(path)))
+                    return true;
             }
             return false;
         }

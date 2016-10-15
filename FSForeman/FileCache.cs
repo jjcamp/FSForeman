@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -13,8 +14,8 @@ namespace FSForeman {
     /// </summary>
     [Serializable]
     public class FileCache {
-        private ConcurrentDictionary<string, FileReference> files;
-        private ConcurrentDictionary<string, List<string>> hashes;
+        private readonly ConcurrentDictionary<string, FileReference> files;
+        private readonly ConcurrentDictionary<string, List<string>> hashes;
 
         /// <summary>[DISABLED] The current size of the cache.</summary>
         public uint Size { get; private set; }
@@ -32,15 +33,14 @@ namespace FSForeman {
         /// </summary>
         /// <param name="file">The file to add.</param>
         public void Add(FileInfo file) {
-            if (!files.ContainsKey(file.FullName)) {
-                var fr = new FileReference(file);
-                try {
-                    files.TryAdd(file.FullName, fr);
-                }
-                catch (OverflowException) {
-                    // Thrown on Int32.MaxValue (~2tril)
-                    // Should be some graceful handling which causes a dictionary split
-                }
+            if (files.ContainsKey(file.FullName)) return;
+            var fr = new FileReference(file);
+            try {
+                files.TryAdd(file.FullName, fr);
+            }
+            catch (OverflowException) {
+                // Thrown on Int32.MaxValue (~2tril)
+                // Should be some graceful handling which causes a dictionary split
             }
         }
 
@@ -57,11 +57,10 @@ namespace FSForeman {
         /// </summary>
         /// <param name="file">The file to remove.</param>
         public void Remove(FileInfo file) {
-            if (files.ContainsKey(file.FullName)) {
-                FileReference fr;
-                if (files.TryRemove(file.FullName, out fr))
-                    RemoveFromHashes(file.FullName, fr);
-            }
+            if (!files.ContainsKey(file.FullName)) return;
+            FileReference fr;
+            if (files.TryRemove(file.FullName, out fr))
+                RemoveFromHashes(file.FullName, fr);
         }
 
         /// <summary>
@@ -81,10 +80,9 @@ namespace FSForeman {
                 Add(file);
             else {
                 FileReference fr;
-                if (files.TryGetValue(file.FullName, out fr)) {
-                    fr.Change(file);
-                    RemoveFromHashes(file.FullName, fr);
-                }
+                if (!files.TryGetValue(file.FullName, out fr)) return;
+                fr.Change(file);
+                RemoveFromHashes(file.FullName, fr);
             }
         }
 
@@ -98,18 +96,17 @@ namespace FSForeman {
 
         public void StartUpdate() {
             Parallel.ForEach(files, async kv => {
-                if (kv.Value.Dirty) {
-                    var fi = new FileInfo(kv.Key);
-                    await kv.Value.StartHash(fi, hash => {
-                        hashes.AddOrUpdate(hash, new List<string>() { kv.Key }, (h, hl) => {
-                            lock (hl) {
-                                if (!hl.Contains(kv.Key))
-                                    hl.Add(kv.Key);
-                            }
-                            return hl;
-                        });
+                if (!kv.Value.Dirty) return;
+                var fi = new FileInfo(kv.Key);
+                await kv.Value.StartHash(fi, hash => {
+                    hashes.AddOrUpdate(hash, new List<string>() { kv.Key }, (h, hl) => {
+                        lock (hl) {
+                            if (!hl.Contains(kv.Key))
+                                hl.Add(kv.Key);
+                        }
+                        return hl;
                     });
-                }
+                });
             });
         }
 
@@ -120,10 +117,9 @@ namespace FSForeman {
         /// <param name="fr">The FileReference attached to the path.</param>
         private void RemoveFromHashes(string path, FileReference fr) {
             List<string> hl;
-            if (fr.Hash != null && hashes.TryGetValue(fr.Hash, out hl)) {
-                lock (hl) {
-                    hl.Remove(path);
-                }
+            if (fr.Hash == null || !hashes.TryGetValue(fr.Hash, out hl)) return;
+            lock (hl) {
+                hl.Remove(path);
             }
         }
 
@@ -135,10 +131,8 @@ namespace FSForeman {
         public void Populate(DirectoryInfo dir, List<Regex> ignores) {
             // There is a significant speedup by processing each directory in its own thread...
             Parallel.ForEach(dir.EnumerateDirectories(), d => {
-                foreach (var regex in ignores) {
-                    if (regex.IsMatch(d.FullName))
-                        return;
-                }
+                if (ignores.Any(regex => regex.IsMatch(d.FullName)))
+                    return;
                 try {
                     Populate(d, ignores);
                 }
@@ -148,10 +142,8 @@ namespace FSForeman {
             });
             // ... but not for individual files.
             foreach (var f in dir.EnumerateFiles()) {
-                foreach (var regex in ignores) {
-                    if (regex.IsMatch(f.FullName))
-                        return;
-                }
+                if (ignores.Any(regex => regex.IsMatch(f.FullName)))
+                    return;
                 try {
                     Add(f);
                     // To overcome the 2.1 tril files issue, we need to keep track of the current
@@ -175,9 +167,8 @@ namespace FSForeman {
         public void Populate(string[] dirs) {
             // Create the regex's once
             var ignorePatterns = Configuration.Global.Ignores;
-            List<Regex> ignores = new List<Regex>(ignorePatterns.Length);
-            foreach (var p in ignorePatterns)
-                ignores.Add(new Regex(p));
+            var ignores = new List<Regex>(ignorePatterns.Length);
+            ignores.AddRange(ignorePatterns.Select(p => new Regex(p)));
 
             foreach (var d in dirs)
                 Populate(new DirectoryInfo(d), ignores);
@@ -190,23 +181,17 @@ namespace FSForeman {
         public List<List<string>> GetDuplicates() {
             var dupes = new List<List<string>>();
             foreach (var kv in hashes) {
-                if (kv.Value.Count > 1) {
-                    var ls = new List<string>(kv.Value.Count);
-                    foreach (var fn in kv.Value)
-                        ls.Add(fn);
-                    dupes.Add(ls);
-                }
+                if (kv.Value.Count <= 1) continue;
+                var ls = new List<string>(kv.Value.Count);
+                ls.AddRange(kv.Value);
+                dupes.Add(ls);
             }
             return dupes;
         }
 
         /// <summary>[DEBUG] Don't use this because it locks the cache.</summary>
         public int GetDirtyCount() {
-            var i = 0;
-            foreach (var kv in files) {
-                if (kv.Value.Dirty) i++;
-            }
-            return i;
+            return files.Count(kv => kv.Value.Dirty);
         }
 
         /// <summary>

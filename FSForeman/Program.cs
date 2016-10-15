@@ -1,8 +1,8 @@
 ﻿using Topshelf;
 
 namespace FSForeman {
-    class Program {
-        static void Main(string[] args) {
+    internal class Program {
+        private static void Main(string[] args) {
             HostFactory.Run(x => {
                 x.Service<Service>(s => {
                     s.ConstructUsing(() => new Service());

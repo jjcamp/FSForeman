@@ -12,7 +12,7 @@ namespace FSForeman {
         /// </summary>
         public static Configuration Global;
         
-        private string connString;
+        private readonly string connString;
         private CachedResults<string> ignores; // Compiler warns that these are always null, but
         private CachedResults<string> roots;   // they are assigned in GetSingleColumnCachedResults()
         private OtherOpts otherOpts;
@@ -20,11 +20,12 @@ namespace FSForeman {
         /// <summary>
         /// Patterns that should be ignored by the <see cref="Watcher"/> and <see cref="FileCache"/>.
         /// </summary>
-        public string[] Ignores { get { return GetSingleColumnCachedResults(ignores, "Ignores", "Pattern"); } }
+        public string[] Ignores => GetSingleColumnCachedResults(ignores, "Ignores", "Pattern");
+
         /// <summary>
         /// The base directories monitored by the <see cref="Watcher"/> and <see cref="FileCache"/>.
         /// </summary>
-        public string[] Roots { get { return GetSingleColumnCachedResults(roots, "Roots", "Root"); } }
+        public string[] Roots => GetSingleColumnCachedResults(roots, "Roots", "Root");
 
         /// <summary>
         /// Adds an ignore pattern.
@@ -53,7 +54,11 @@ namespace FSForeman {
         /// </summary>
         public int Port {
             get { CheckUpdateOtherOptions(); return otherOpts.Port; }
-            set { var newOpts = new OtherOpts(otherOpts); newOpts.Port = value; SetOtherOptions(newOpts); }
+            set {
+                var newOpts = new OtherOpts(otherOpts) {
+                    Port = value
+                };
+                SetOtherOptions(newOpts); }
         }
 
         /// <summary>
@@ -61,7 +66,11 @@ namespace FSForeman {
         /// </summary>
         public int UpdateDelay {
             get { CheckUpdateOtherOptions(); return otherOpts.UpdateDelay; }
-            set { var newOpts = new OtherOpts(otherOpts); newOpts.UpdateDelay = value; SetOtherOptions(newOpts); }
+            set {
+                var newOpts = new OtherOpts(otherOpts) {
+                    UpdateDelay = value
+                };
+                SetOtherOptions(newOpts); }
         }
 
         /// <summary>
@@ -134,21 +143,20 @@ namespace FSForeman {
         private void CheckUpdateOtherOptions() {
             // Since nothing else SHOULD be in the database, we can be sure that optherOpts
             // is always up-to-date.
-            if (otherOpts == null) {
-                using (var conn = new SQLiteConnection(connString)) {
-                    conn.Open();
-                    using (var trans = conn.BeginTransaction()) {
-                        var sql = "SELECT Port, UpdateDelay FROM Other";
-                        var cmd = new SQLiteCommand(sql, conn);
-                        var reader = cmd.ExecuteReader();
-                        reader.Read();
-                        otherOpts = new OtherOpts {
-                            Port = Convert.ToInt32(reader["Port"]),
-                            UpdateDelay = Convert.ToInt32(reader["UpdateDelay"])
-                        };
+            if (otherOpts != null) return;
+            using (var conn = new SQLiteConnection(connString)) {
+                conn.Open();
+                using (var trans = conn.BeginTransaction()) {
+                    var sql = "SELECT Port, UpdateDelay FROM Other";
+                    var cmd = new SQLiteCommand(sql, conn);
+                    var reader = cmd.ExecuteReader();
+                    reader.Read();
+                    otherOpts = new OtherOpts {
+                        Port = Convert.ToInt32(reader["Port"]),
+                        UpdateDelay = Convert.ToInt32(reader["UpdateDelay"])
+                    };
 
-                        trans.Commit();
-                    }
+                    trans.Commit();
                 }
             }
         }
@@ -160,7 +168,7 @@ namespace FSForeman {
             using (var conn = new SQLiteConnection(connString)) {
                 conn.Open();
                 using (var trans = conn.BeginTransaction()) {
-                    var sql = "UPDATE Other SET Port=@Port, UpdateDelay=@UpdateDelay";
+                    const string sql = "UPDATE Other SET Port=@Port, UpdateDelay=@UpdateDelay";
                     var cmd = new SQLiteCommand(sql, conn);
                     cmd.Parameters.Add(new SQLiteParameter("Port", otherOpts.Port));
                     cmd.Parameters.Add(new SQLiteParameter("UpdateDelay", otherOpts.UpdateDelay));
@@ -250,7 +258,7 @@ namespace FSForeman {
         /// A wrapper around an array, which contains a bool deciding if the information is current or not.
         /// </summary>
         private class CachedResults<T> {
-            public T[] Results;
+            public readonly T[] Results;
             public bool Fresh;
             
             public CachedResults(long size) {
@@ -260,12 +268,11 @@ namespace FSForeman {
         }
 
         // Default configuration info
-        private string[] DefaultIgnoreDirs = {
-           // @"*\System Volume Information"
+        private readonly string[] DefaultIgnoreDirs = {
            @"\\System Volume Information"
         };
 
-        private string[] DefaultRoots = {
+        private readonly string[] DefaultRoots = {
             @"D:\"
         };
 

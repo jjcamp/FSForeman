@@ -3,11 +3,11 @@ using System.Threading;
 using System.Diagnostics;
 
 namespace FSForeman {
-    class Service {
-        private WebHost webhost;
-        private FileCache cache;
-        private Watcher watcher;
-        private bool IsRunning;
+    internal class Service {
+        private readonly WebHost webhost;
+        private readonly FileCache cache;
+        private readonly Watcher watcher;
+        private bool isRunning;
 
         public Service() {
             // Logger
@@ -52,18 +52,18 @@ namespace FSForeman {
             watcher.Unlock();
             Logger.LogLine($"Populated {cache.Size} items in {sw.Elapsed.ToString(@"hh\:mm\:ss\.fff")}.");
 
-            IsRunning = true;
+            isRunning = true;
 
             Loop(Configuration.Global.UpdateDelay);
         }
 
         public void Stop() {
             webhost.Stop();
-            IsRunning = false;
+            isRunning = false;
         }
 
         private void Loop(int sleeptime) {
-            while(IsRunning) {
+            while(isRunning) {
                 cache.StartUpdate();
                 Thread.Sleep(sleeptime);
             }

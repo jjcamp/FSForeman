@@ -8,7 +8,7 @@ namespace FSForeman {
     /// Hosts the API and web interface.
     /// </summary>
     public class WebHost : NancyHost {
-        private Uri uri;
+        private readonly Uri uri;
 
         /// <summary>
         /// Creates a new <see cref="WebHost"/> instance.
@@ -16,7 +16,7 @@ namespace FSForeman {
         /// <param name="hostName">Hostname</param>
         /// <param name="port">Port</param>
         /// <param name="register">A list of initialized objects that may be used by the web modules.</param>
-        public WebHost(string hostName, int port, params object[] register) : this(makeUriAndConfig(hostName, port), register) { }
+        public WebHost(string hostName, int port, params object[] register) : this(MakeUriAndConfig(hostName, port), register) { }
 
         // Helper to simplifiy the constructor.
         private WebHost(Tuple<Uri, HostConfiguration> uriAndConfig, params object[] register)
@@ -25,7 +25,7 @@ namespace FSForeman {
         }
 
         // See constructor above.
-        private static Tuple<Uri, HostConfiguration> makeUriAndConfig(string hostName, int port) {
+        private static Tuple<Uri, HostConfiguration> MakeUriAndConfig(string hostName, int port) {
             var uri = new Uri($"http://{hostName}:{port}/fsforeman/");
             var config = new HostConfiguration();
             config.UrlReservations.CreateAutomatically = true;
@@ -45,9 +45,9 @@ namespace FSForeman {
     /// Custom bootstrapper to allow passing of inititalized objects into nancy modules.
     /// </summary>
     public class Bootstrapper : DefaultNancyBootstrapper {
-        object[] registerObjects;
+        private readonly object[] registerObjects;
 
-        public Bootstrapper(params object[] objectsToRegister) : base() {
+        public Bootstrapper(params object[] objectsToRegister) {
             registerObjects = objectsToRegister;
         }
 

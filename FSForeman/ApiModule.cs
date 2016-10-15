@@ -18,7 +18,7 @@ namespace FSForeman {
             Get["/log"] = _ => {
                 if (Logger.Output != Logger.OutputType.File)
                     return Response.AsJson(false);
-                string log = "";
+                var log = "";
                 lock (Logger.FilePath) {
                     var fs = File.OpenRead(Logger.FilePath);
                     using (var sr = new StreamReader(fs)) {
@@ -52,9 +52,7 @@ namespace FSForeman {
                 return Response.AsJson(true);
             };
 
-            Get["/duplicates"] = _ => {
-                return Response.AsJson(cache.GetDuplicates());
-            };
+            Get["/duplicates"] = _ => Response.AsJson(cache.GetDuplicates());
         }
 
         [Serializable]
