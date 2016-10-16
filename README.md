@@ -12,8 +12,3 @@ in its current iteration.
 - Web UI
 - REST API
 - Ignore directories or files using regular expression patterns
-
-## Major TODOs:
-- Currently maxes out at 2.1 trillion files
-- Make Web UI pretty
-- Add tests
