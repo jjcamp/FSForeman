@@ -58,7 +58,8 @@ namespace FSForeman {
                 var newOpts = new OtherOpts(otherOpts) {
                     Port = value
                 };
-                SetOtherOptions(newOpts); }
+                SetOtherOptions(newOpts);
+            }
         }
 
         /// <summary>
@@ -70,7 +71,8 @@ namespace FSForeman {
                 var newOpts = new OtherOpts(otherOpts) {
                     UpdateDelay = value
                 };
-                SetOtherOptions(newOpts); }
+                SetOtherOptions(newOpts);
+            }
         }
 
         /// <summary>
