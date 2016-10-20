@@ -3,6 +3,7 @@ using System.IO;
 using Xunit;
 using System.Reflection;
 using FSForeman;
+using System.Data.SQLite;
 
 namespace Tests {
     public class ConfigurationTests : IDisposable {
@@ -14,8 +15,7 @@ namespace Tests {
         private readonly string fileName;
 
         public ConfigurationTests() {
-            //const string fileName = "test.db";
-            fileName = new Random().Next().ToString() + ".db";
+            fileName = Path.GetRandomFileName();
             conf = new Configuration(fileName);
 
             defaultIgnores =
@@ -26,15 +26,9 @@ namespace Tests {
         }
 
         public void Dispose() {
-            for (var i = 0; i < 10000; i++) {
-                try {
-                    File.Delete(fileName);
-                    break;
-                }
-                catch (IOException) {
-                    System.Threading.Thread.Sleep(0);
-                }
-            }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            File.Delete(fileName);
         }
 
         [Fact]
