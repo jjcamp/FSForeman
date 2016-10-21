@@ -1,6 +1,7 @@
 ﻿using System;
 using Nancy;
 using Nancy.Hosting.Self;
+using Nancy.Json;
 using Nancy.TinyIoc;
 
 namespace FSForeman {
@@ -29,6 +30,7 @@ namespace FSForeman {
             var uri = new Uri($"http://{hostName}:{port}/fsforeman/");
             var config = new HostConfiguration();
             config.UrlReservations.CreateAutomatically = true;
+            JsonSettings.MaxJsonLength = Int32.MaxValue;
             return new Tuple<Uri, HostConfiguration>(uri, config);
         }
         
