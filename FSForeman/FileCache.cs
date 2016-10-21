@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FSForeman {
     /// <summary>
@@ -13,9 +12,9 @@ namespace FSForeman {
     /// changes.  A <see cref="Watcher"/> should be used for this purpose.
     /// </summary>
     [Serializable]
-    public class FileCache {
-        private ConcurrentDictionary<string, FileReference> files;
-        private ConcurrentDictionary<ulong, List<string>> hashes;
+    public partial class FileCache {
+        internal ConcurrentDictionary<string, FileReference> files;
+        internal ConcurrentDictionary<ulong, List<string>> hashes;
         
         /// <summary>
         /// Creates a new instance of <see cref="FileCache"/>.
@@ -211,49 +210,6 @@ namespace FSForeman {
 
             foreach (var d in dirs)
                 Populate(new DirectoryInfo(d), ignores);
-        }
-        
-        /// <summary>
-        /// Finds the duplicate files in the cache.
-        /// </summary>
-        /// <returns>A list of a lists of duplicate files.</returns>
-        public List<List<string>> GetDuplicates() {
-            var dupes = new List<List<string>>();
-            foreach (var kv in hashes) {
-                if (kv.Value.Count <= 1) continue;
-                var ls = new List<string>(kv.Value.Count);
-                ls.AddRange(kv.Value);
-                dupes.Add(ls);
-            }
-            return dupes;
-        }
-
-        /// <summary>[DEBUG] Don't use this because it locks the cache.</summary>
-        public int GetDirtyCount() {
-            return files.Count(kv => kv.Value.Dirty);
-        }
-
-        /// <summary>
-        /// Saves a <see cref="FSForeman.FileCache"/> to memory.
-        /// </summary>
-        /// <param name="cache">The cache to save.</param>
-        /// <returns>Binary representation of the cache in memory.</returns>
-        public static MemoryStream SaveToMemory(FileCache cache) {
-            var stream = new MemoryStream();
-            var fmt = new BinaryFormatter();
-            fmt.Serialize(stream, cache);
-            return stream;
-        }
-
-        /// <summary>
-        /// Loads a <see cref="FileCache"/> from memory.
-        /// </summary>
-        /// <param name="stream">Binary representation of the cache in memory.</param>
-        /// <returns>The loaded cache.</returns>
-        public static FileCache LoadFromMemory(MemoryStream stream) {
-            var fmt = new BinaryFormatter();
-            stream.Seek(0, SeekOrigin.Begin);
-            return (FileCache)fmt.Deserialize(stream);
         }
     }
 }
