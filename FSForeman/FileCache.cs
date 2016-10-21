@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
 
 namespace FSForeman {
     /// <summary>
@@ -17,10 +16,7 @@ namespace FSForeman {
     public class FileCache {
         private ConcurrentDictionary<string, FileReference> files;
         private ConcurrentDictionary<ulong, List<string>> hashes;
-
-        /// <summary>[DISABLED] The current size of the cache.</summary>
-        public uint Size { get; private set; }
-
+        
         /// <summary>
         /// Creates a new instance of <see cref="FileCache"/>.
         /// </summary>
@@ -192,13 +188,6 @@ namespace FSForeman {
                 if (ignores.Any(regex => regex.IsMatch(f.FullName)))
                     return;
                 Add(f);
-                // To overcome the 2.1 tril files issue, we need to keep track of the current
-                // number of files.  The best way to do this that I can think of at the
-                // moment is to use a volatile uint (or int) since it is garunteed to be
-                // atomic.  However the volatile keyword (which is necessary) really causes
-                // a performance hit, so just ignore this issue until we are ready to solve
-                // it.
-                //Size++;
             }
         }
 
