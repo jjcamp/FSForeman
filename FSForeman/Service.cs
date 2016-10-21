@@ -40,17 +40,23 @@ namespace FSForeman {
         public void Start() {
             // Web Host
             webhost.Start();
+            
+            // File Cache Pre-count
+            var sw = Stopwatch.StartNew();
+            var ui = cache.PreCount(Configuration.Global.Roots);
+            sw.Stop();
+            Logger.LogLine($"Counted {ui} items in {sw.Elapsed.ToString(@"hh\:mm\:ss\.fff")}.");
 
             // Watcher
             watcher.Lock();
             watcher.StartWatching();
 
             // File Cache
-            var sw = Stopwatch.StartNew();
+            sw = Stopwatch.StartNew();
             cache.Populate(Configuration.Global.Roots);
             sw.Stop();
             watcher.Unlock();
-            Logger.LogLine($"Populated {cache.Size} items in {sw.Elapsed.ToString(@"hh\:mm\:ss\.fff")}.");
+            Logger.LogLine($"Populated cache in {sw.Elapsed.ToString(@"hh\:mm\:ss\.fff")}.");
 
             isRunning = true;
 

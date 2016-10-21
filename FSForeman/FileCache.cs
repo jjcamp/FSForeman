@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 
 namespace FSForeman {
     /// <summary>
@@ -14,8 +15,8 @@ namespace FSForeman {
     /// </summary>
     [Serializable]
     public class FileCache {
-        private readonly ConcurrentDictionary<string, FileReference> files;
-        private readonly ConcurrentDictionary<ulong, List<string>> hashes;
+        private ConcurrentDictionary<string, FileReference> files;
+        private ConcurrentDictionary<ulong, List<string>> hashes;
 
         /// <summary>[DISABLED] The current size of the cache.</summary>
         public uint Size { get; private set; }
@@ -121,6 +122,52 @@ namespace FSForeman {
             lock (hl) {
                 hl.Remove(path);
             }
+        }
+
+        // Will have to profile this vs. some other options
+        public uint PreCount(DirectoryInfo dir, List<Regex> ignores) {
+            var count = dir.EnumerateDirectories().AsParallel().Aggregate<DirectoryInfo, uint>(0, (current, d) => {
+                try {
+                    return current + PreCount(d, ignores);
+                }
+                catch (UnauthorizedAccessException) {
+                    return current + 0;
+                }
+            });
+            return count + (uint)dir.GetFiles().Length;
+        }
+
+        public uint PreCount(string[] dirs) {
+            var ignorePatterns = Configuration.Global.Ignores;
+            var ignores = new List<Regex>(ignorePatterns.Length);
+            ignores.AddRange(ignorePatterns.Select(p => new Regex(p)));
+
+            var count = dirs.Aggregate<string, uint>(0, (current, d) => current + PreCount(new DirectoryInfo(d), ignores));
+            if (!files.IsEmpty) return count; // Dummy check
+
+            // Re-initialize the dictionaries with sizes based on the count
+            int newSize;
+            try {
+                checked {
+                    newSize = (int)(count * 1.2);
+                }
+            }
+            catch (OverflowException) {
+                newSize = int.MaxValue; // luckily, this number is also a prime
+                // Since there is no ConcurrentDictionary constructor allowing a uint,
+                // even with gcAllowVeryLargeObjects the max will have to be that
+                // of a signed int.
+            }
+            if (newSize % 2 == 0)
+                newSize++;      // Make odd
+            while (newSize % 3 == 1 || newSize % 5 == 1 || newSize % 7 == 1)
+                newSize += 2;   // Ensure number is not divisible by small primes
+            files = new ConcurrentDictionary<string, FileReference>(Environment.ProcessorCount, newSize);
+            // hashes is unlikely to be as big as files, but unless the extra memory becomes and issue
+            // this is less work than calculating another size.
+            hashes = new ConcurrentDictionary<ulong, List<string>>(Environment.ProcessorCount, newSize);
+
+            return count;
         }
 
         /// <summary>
