@@ -13,8 +13,8 @@ namespace FSForeman {
     /// </summary>
     [Serializable]
     public partial class FileCache {
-        internal ConcurrentDictionary<string, FileReference> files;
-        internal ConcurrentDictionary<ulong, List<string>> hashes;
+        private ConcurrentDictionary<string, FileReference> files;
+        private ConcurrentDictionary<ulong, List<string>> hashes;
         
         /// <summary>
         /// Creates a new instance of <see cref="FileCache"/>.
