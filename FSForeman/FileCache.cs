@@ -91,6 +91,9 @@ namespace FSForeman {
             await new Task(() => Change(file));
         }
 
+        /// <summary>
+        /// Begins hashing files.
+        /// </summary>
         public void StartUpdate() {
             Parallel.ForEach(files, async kv => {
                 if (!kv.Value.Dirty) return;
@@ -120,7 +123,12 @@ namespace FSForeman {
             }
         }
 
-        // Will have to profile this vs. some other options
+        /// <summary>
+        /// Recursively counts files.
+        /// </summary>
+        /// <param name="dir">The directory to crawl.</param>
+        /// <param name="ignores">A list of patterns to ignore.</param>
+        /// <returns>Number of files found.</returns>
         public uint PreCount(DirectoryInfo dir, List<Regex> ignores) {
             var count = dir.EnumerateDirectories().AsParallel().Aggregate<DirectoryInfo, uint>(0, (current, d) => {
                 try {
@@ -133,6 +141,12 @@ namespace FSForeman {
             return count + (uint)dir.GetFiles().Length;
         }
 
+        /// <summary>
+        /// Counts the number of files that will be cached and allocates the internal
+        /// dictionaries based on that number.
+        /// </summary>
+        /// <param name="dirs">An array of directories to crawl.</param>
+        /// <returns>Number of files found.</returns>
         public uint PreCount(string[] dirs) {
             var ignorePatterns = Configuration.Global.Ignores;
             var ignores = new List<Regex>(ignorePatterns.Length);
