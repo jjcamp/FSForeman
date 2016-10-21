@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.HashFunction;
-using System.Security.Cryptography;
 
 namespace FSForeman {
     /// <summary>
@@ -16,9 +15,9 @@ namespace FSForeman {
     public class FileReference {
         // Non-Serialized Fields
         [NonSerialized]
-        private bool isHashing = false;
+        private bool isHashing;
         [NonSerialized]
-        private CancellationTokenSource cts = null;
+        private CancellationTokenSource cts;
 
         public delegate void OnHashFinished(ulong hash);
 

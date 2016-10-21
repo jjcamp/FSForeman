@@ -32,13 +32,7 @@ namespace FSForeman {
         public void Add(FileInfo file) {
             if (files.ContainsKey(file.FullName)) return;
             var fr = new FileReference(file);
-            try {
-                files.TryAdd(file.FullName, fr);
-            }
-            catch (OverflowException) {
-                // Thrown on Int32.MaxValue (~2tril)
-                // Should be some graceful handling which causes a dictionary split
-            }
+            files.TryAdd(file.FullName, fr);
         }
 
         /// <summary>
