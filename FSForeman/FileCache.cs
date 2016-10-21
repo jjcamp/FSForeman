@@ -144,19 +144,14 @@ namespace FSForeman {
             foreach (var f in dir.EnumerateFiles()) {
                 if (ignores.Any(regex => regex.IsMatch(f.FullName)))
                     return;
-                try {
-                    Add(f);
-                    // To overcome the 2.1 tril files issue, we need to keep track of the current
-                    // number of files.  The best way to do this that I can think of at the
-                    // moment is to use a volatile uint (or int) since it is garunteed to be
-                    // atomic.  However the volatile keyword (which is necessary) really causes
-                    // a performance hit, so just ignore this issue until we are ready to solve
-                    // it.
-                    //Size++;
-                }
-                catch (UnauthorizedAccessException) {
-                    Logger.LogLine($"Unauthorized Access: File {f.FullName}");
-                }
+                Add(f);
+                // To overcome the 2.1 tril files issue, we need to keep track of the current
+                // number of files.  The best way to do this that I can think of at the
+                // moment is to use a volatile uint (or int) since it is garunteed to be
+                // atomic.  However the volatile keyword (which is necessary) really causes
+                // a performance hit, so just ignore this issue until we are ready to solve
+                // it.
+                //Size++;
             }
         }
 
