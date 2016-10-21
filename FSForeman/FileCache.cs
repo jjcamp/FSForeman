@@ -15,7 +15,7 @@ namespace FSForeman {
     [Serializable]
     public class FileCache {
         private readonly ConcurrentDictionary<string, FileReference> files;
-        private readonly ConcurrentDictionary<string, List<string>> hashes;
+        private readonly ConcurrentDictionary<ulong, List<string>> hashes;
 
         /// <summary>[DISABLED] The current size of the cache.</summary>
         public uint Size { get; private set; }
@@ -25,7 +25,7 @@ namespace FSForeman {
         /// </summary>
         public FileCache() {
             files = new ConcurrentDictionary<string, FileReference>();
-            hashes = new ConcurrentDictionary<string, List<string>>();
+            hashes = new ConcurrentDictionary<ulong, List<string>>();
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace FSForeman {
         /// <param name="fr">The FileReference attached to the path.</param>
         private void RemoveFromHashes(string path, FileReference fr) {
             List<string> hl;
-            if (fr.Hash == null || !hashes.TryGetValue(fr.Hash, out hl)) return;
+            if (fr.Hash == null || !hashes.TryGetValue(fr.Hash.Value, out hl)) return;
             lock (hl) {
                 hl.Remove(path);
             }

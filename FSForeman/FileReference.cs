@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.HashFunction;
 using System.Security.Cryptography;
 
 namespace FSForeman {
@@ -21,12 +22,12 @@ namespace FSForeman {
         [NonSerialized]
         private CancellationTokenSource cts = null;
 
-        public delegate void OnHashFinished(string hash);
+        public delegate void OnHashFinished(ulong hash);
 
         // Properties (cannot serialize a property directly, thus the fields above)
 
-        /// <summary>MD5 Hash for the file</summary>
-        public string Hash { get; private set; }
+        /// <summary>Hash for the file</summary>
+        public ulong? Hash { get; private set; }
         /// <summary>An object describing when the file was last written</summary>
         public DateTime Modified { get; private set; }
         /// <summary>The size of the file in bytes</summary>
@@ -85,12 +86,12 @@ namespace FSForeman {
             try {
                 isHashing = true;
                 cts = new CancellationTokenSource();
-                var hashTask = Task.Factory.StartNew(() => GetHexStringHash(file), cts.Token);
+                var hashTask = Task.Factory.StartNew(() => GetHash(file), cts.Token);
                 Hash = await hashTask;
                 isHashing = false;
                 if (!hashTask.IsCanceled && Hash != null) {
                     Dirty = false;
-                    func?.Invoke(Hash);
+                    func?.Invoke(Hash.Value);
                 }
             }
             catch (Exception e) {
@@ -99,30 +100,25 @@ namespace FSForeman {
         }
 
         /// <summary>
-        /// Computes an MD5 Hash for a file as a hexadecimal string.
+        /// Computes a 64-bit hash for a file.
         /// </summary>
         /// <param name="file">File to hash</param>
-        /// <returns>String with the hash or null if the hash failed.</returns>
-        private static string GetHexStringHash(FileInfo file) {
+        /// <returns>ulong hash or null if the hash failed.</returns>
+        private static ulong? GetHash(FileInfo file) {
             byte[] bhash;
-            var md5 = new MD5CryptoServiceProvider();
+            var xh = new xxHash(64);
             try {
                 using (var fs = file.OpenRead()) {
-                    bhash = md5.ComputeHash(fs);   
+                    bhash = xh.ComputeHash(fs);
                 }
             }
             catch (IOException) {
                 return null;
             }
-            var c = new char[bhash.Length * 2];
-            int b;
-            for (var i = 0; i < bhash.Length; i++) {
-                b = bhash[i] >> 4;
-                c[i * 2] = (char)(87 + b + (((b - 10) >> 31) & -39));
-                b = bhash[i] & 0xF;
-                c[i * 2 + 1] = (char)(87 + b + (((b - 10) >> 31) & -39));
-            }
-            return new string(c);
+            ulong lhash = 0;
+            for (var i = 0; i < bhash.Length; i++)
+                lhash |= (ulong)bhash[i] << (8 * i);
+            return lhash;
         }
     }
 }
