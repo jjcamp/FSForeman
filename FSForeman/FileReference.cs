@@ -14,8 +14,6 @@ namespace FSForeman {
     /// </summary>
     [Serializable]
     public class FileReference {
-        // Serialized Fields
-
         // Non-Serialized Fields
         [NonSerialized]
         private bool isHashing = false;
@@ -24,7 +22,7 @@ namespace FSForeman {
 
         public delegate void OnHashFinished(ulong hash);
 
-        // Properties (cannot serialize a property directly, thus the fields above)
+        // Properties
 
         /// <summary>Hash for the file</summary>
         public ulong? Hash { get; private set; }
