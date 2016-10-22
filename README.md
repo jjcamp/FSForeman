@@ -1,4 +1,4 @@
-﻿# FileShare Foreman
+﻿# FileShare Foreman [![Build status](https://ci.appveyor.com/api/projects/status/46jbsj2eh7b2iob9?svg=true)](https://ci.appveyor.com/project/jjcamp/fsforeman)
 
 FileShare Foreman (FSF) is a Windows service whose primary job is to look for duplicate
 files in a file share.  It does this by performing an MD5 hash on each file, and then
