@@ -53,6 +53,7 @@ namespace FSForeman {
                 if (!files.TryGetValue(fileList[i], out fr)) continue;
                 size0 = fr.Size;
                 matches.Add(fileList[i]);
+                i++;
                 break;
             }
             // Check sizes of the remaining files
