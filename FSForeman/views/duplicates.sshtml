@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FileShare Foreman</title>
+    <link rel="stylesheet" href="/fsforeman/content/styles.css" />
+    <script src="/fsforeman/content/main.js"></script>
+    <script>
+        getDuplicates();
+
+        window.onload = function() {
+            var duplicatesReloadButton = id('duplicates-reload-button');
+            duplicatesReloadButton.type = 'button';
+            duplicatesReloadButton.addEventListener('click', getDuplicates, false);
+        }
+    </script>
+</head>
+<body>
+    <div id='title'>
+        <h1>FileShare Foreman</h1>
+    </div>
+@Partial['menu.sshtml'];
+    <div id='content'>
+        <h2>Duplicate Files<button id='duplicates-reload-button'>Reload</button></h2>
+        <table id='duplicates'></table>
+    </div>
+</body>
+</html>

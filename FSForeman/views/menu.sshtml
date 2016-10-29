@@ -1,0 +1,8 @@
+    <div id='menu'>
+        <ul>
+            <li><a href="/fsforeman/">Status</a></li>
+            <li><a href="/fsforeman/duplicates">Duplicates</a></li>
+            <li><a href="/fsforeman/configure">Configure</a></li>
+            <li><a href="/fsforeman/log">Log</a></li>
+        </ul>
+    </div>

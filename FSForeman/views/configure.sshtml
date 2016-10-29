@@ -1,0 +1,54 @@
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FileShare Foreman</title>
+    <link rel="stylesheet" href="/fsforeman/content/styles.css" />
+    <script src="/fsforeman/content/main.js"></script>
+    <script>
+        getRoots();
+        getIgnores();
+
+        window.onload = function() {
+            var rootRemoveButton = id('root-remove-button');
+            rootRemoveButton.type = 'button';
+            rootRemoveButton.addEventListener('click', removeRoot, false);
+            var rootAddButton = id('root-add-button');
+            rootAddButton.type = 'button';
+            rootAddButton.addEventListener('click', addRoot, false);
+            var ignoreRemoveButton = id('ignore-remove-button');
+            ignoreRemoveButton.type = 'button';
+            ignoreRemoveButton.addEventListener('click', removeIgnore, false);
+            var ignoreAddButton = id('ignore-add-button');
+            ignoreAddButton.type = 'button';
+            ignoreAddButton.addEventListener('click', addIgnore, false);
+        }
+    </script>
+</head>
+<body>
+    <div id='title'>
+        <h1>FileShare Foreman</h1>
+    </div>
+@Partial['menu.sshtml'];
+    <div id='content'>
+        <h2>Configuration</h2>
+        <div>
+            <form>
+                <b>Directory Roots:</b>
+                <select id='root-select'></select>
+                <button id='root-remove-button'>Remove</button><br />
+                <input type='text' id='root-add-text' />
+                <button id='root-add-button'>Add</button>
+            </form>
+        </div>
+        <div>
+            <form>
+                <b>Ignore Patterns:</b><br />
+                <select id='ignore-select'></select>
+                <button id='ignore-remove-button'>Remove</button><br />
+                <input type='text' id='ignore-add-text' />
+                <button id='ignore-add-button'>Add</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

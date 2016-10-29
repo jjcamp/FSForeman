@@ -1,4 +1,5 @@
 ﻿var apiSystem = "/fsforeman/api/system";
+var apiDuplicates = "/fsforeman/api/duplicates";
 var apiLog = "/fsforeman/api/log";
 var apiRoots = "/fsforeman/api/roots";
 var apiIgnores = "/fsforeman/api/ignores";
@@ -6,11 +7,15 @@ var apiDuplicates = "/fsforeman/api/duplicates";
 
 var id = document.getElementById.bind(document);
 
-var xhr = function(method, uri, callback) {
+var xhr = function(method, uri, success, failure) {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200)
-            callback(this.responseText)
+        if (this.readyState == 4) {
+            if (this.status == 200)
+                success(this.responseText)
+            else if(failure)
+                failure(this.status, this.statusText)
+        }
     }
     req.open(method, uri, true);
     req.send();
@@ -19,8 +24,28 @@ var xhr = function(method, uri, callback) {
 var getSystemInfo = function() {
     xhr('GET', apiSystem, function(response) {
         var json = JSON.parse(response);
+        id('system-running').innerHTML = "Running";
         id('system-memory').innerHTML = +json.memory.toFixed(2);
         id('system-threads').innerHTML = json.threads;
+    }, function() {
+        id('system-running').innerHTML = "Stopped";
+        id('system-memory').innerHTML = "0";
+        id('system-threads').innerHTML = "0";
+    });
+}
+
+var getDuplicates = function() {
+    xhr('GET', apiDuplicates, function(response) {
+        var json = JSON.parse(response);
+        var html = "<tr><th>Size</th><th>Files</th></tr>";
+        for (var i in json) {
+            html += "<tr><td>" + json[i].size + "</td><td>";
+            for (var j in json[i].files) {
+                html += json[i].files[j] + "<br />";
+            }
+            html += "</td></tr>";
+        }
+        id('duplicates').innerHTML = html;
     });
 }
 
@@ -76,33 +101,4 @@ var addIgnore = function() {
     var pattern = textBox.value.replace(/\\/g, '%5C');
     xhr('POST', apiIgnores + "?pattern=" + pattern, getIgnores);
     textBox.value = "";
-}
-
-var getDuplicates = function() {
-    xhr('GET', apiDuplicates, null);
-}
-
-getSystemInfo();
-setInterval(getSystemInfo, 5000);
-getLog();
-setInterval(getLog, 5000);
-getRoots();
-getIgnores();
-
-window.onload = function() {
-    var rootRemoveButton = id('root-remove-button');
-    rootRemoveButton.type = 'button';
-    rootRemoveButton.addEventListener('click', removeRoot, false);
-    var rootAddButton = id('root-add-button');
-    rootAddButton.type = 'button';
-    rootAddButton.addEventListener('click', addRoot, false);
-    var ignoreRemoveButton = id('ignore-remove-button');
-    ignoreRemoveButton.type = 'button';
-    ignoreRemoveButton.addEventListener('click', removeIgnore, false);
-    var ignoreAddButton = id('ignore-add-button');
-    ignoreAddButton.type = 'button';
-    ignoreAddButton.addEventListener('click', addIgnore, false);
-    var duplicatesButton = id('duplicates-button');
-    duplicatesButton.type = 'button';
-    duplicatesButton.addEventListener('click', getDuplicates, false);
 }

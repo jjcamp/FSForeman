@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>FileShare Foreman</title>
+    <link rel="stylesheet" href="/fsforeman/content/styles.css" />
+    <script src="/fsforeman/content/main.js"></script>
+    <script>
+        getSystemInfo();
+        setInterval(getSystemInfo, 5000);
+    </script>
+</head>
+<body>
+    <div id='title'>
+        <h1>FileShare Foreman</h1>
+    </div>
+@Partial['menu.sshtml'];
+    <div id='content'>
+        <h2>System Status</h2>
+        <table>
+            <tr><th>Service</th><td><span id='system-running'></span></td></tr>
+            <tr><th>Memory</th><td><span id='system-memory'></span>MB</td></tr>
+            <tr><th>Threads</th><td><span id='system-threads'></span></td></tr>
+        </table>
+    </div>
+</body>
+</html>
